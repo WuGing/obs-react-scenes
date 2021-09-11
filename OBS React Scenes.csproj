@@ -71,12 +71,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="ClientApp\config.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
-  <ItemGroup>
     <TypeScriptCompile Update="ClientApp\src\store\Clips.ts">
       <SubType>Code</SubType>
     </TypeScriptCompile>
