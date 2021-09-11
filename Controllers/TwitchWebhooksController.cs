@@ -75,13 +75,6 @@ namespace OBSReactScenes.Controllers
             _hubContext = hubContext;
             _configuration = configuration.Value;
 
-            // since loading the file in the class itself doesn't work...
-            //using (StreamReader r = new StreamReader("./ClientApp/config.json"))
-            //{
-            //    string json = r.ReadToEnd();
-            //    JsonConvert.PopulateObject(json, SettingsInstance.Instance);
-            //}
-
             // channelId string
             _channelId = _configuration.Twitch_ChannelId;
 
@@ -89,7 +82,7 @@ namespace OBSReactScenes.Controllers
             _twitchAPI = new TwitchAPI();
             _twitchAPI.Settings.ClientId = _configuration.Twitch_Api_ClientId;
             _twitchAPI.Settings.Secret = _configuration.Twitch_Api_Secret;
-            // _twitchAPI.Settings.AccessToken = Settings.Instance.Twitch.PubSub.OAuth;
+            // _twitchAPI.Settings.AccessToken = _configuration.Twitch_PubSub_OAuth;
 
             ConnectionCredentials credentials = 
                 new ConnectionCredentials(
