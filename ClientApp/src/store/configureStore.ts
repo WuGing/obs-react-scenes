@@ -15,7 +15,7 @@ export default function configureStore(history: History, initialState?: Applicat
         router: connectRouter(history)
     });
 
-    const enhancers = [];
+    const enhancers : any[] = [];
     const windowIfDefined = typeof window === 'undefined' ? null : window as any;
     if (windowIfDefined && windowIfDefined.__REDUX_DEVTOOLS_EXTENSION__) {
         enhancers.push(windowIfDefined.__REDUX_DEVTOOLS_EXTENSION__());

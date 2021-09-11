@@ -1,10 +1,17 @@
 ﻿import * as React from 'react';
-import Particles, { DestroyMode, EasingType } from 'react-tsparticles';
+import Particles, { DestroyMode, EasingType, Particle } from 'react-tsparticles';
 
-import './FindingMatch.scss';
+// import someTheme from '../theme.modules.scss';
 
-export default class FindingMatch extends React.PureComponent {
+import './Background.scss';
+
+export default class Background extends React.PureComponent {
+
     public render() {
+
+        var backgroundColor: string = "#fff";
+        var particleColor: string = "#ff0000";
+
         return (
             <React.Fragment>
                 <Particles
@@ -13,7 +20,7 @@ export default class FindingMatch extends React.PureComponent {
                         "autoPlay": true,
                         "background": {
                             "color": {
-                                "value": "#033777"
+                                "value": backgroundColor
                             },
                             "image": "",
                             "position": "",
@@ -179,30 +186,7 @@ export default class FindingMatch extends React.PureComponent {
                                 }
                             },
                             "color": {
-                                "value": "#ffffff",
-                                "animation": {
-                                    "h": {
-                                        "count": 0,
-                                        "enable": true,
-                                        "offset": 0,
-                                        "speed": 50,
-                                        "sync": false
-                                    },
-                                    "s": {
-                                        "count": 0,
-                                        "enable": false,
-                                        "offset": 0,
-                                        "speed": 1,
-                                        "sync": true
-                                    },
-                                    "l": {
-                                        "count": 0,
-                                        "enable": false,
-                                        "offset": 0,
-                                        "speed": 1,
-                                        "sync": true
-                                    }
-                                }
+                                "value": particleColor
                             },
                             "destroy": {
                                 "mode": DestroyMode.none,
@@ -480,7 +464,7 @@ export default class FindingMatch extends React.PureComponent {
                         "pauseOnOutsideViewport": true,
                         "responsive": [],
                         "themes": []
-                    }}/>
+                    }} />
             </React.Fragment>
         );
     }

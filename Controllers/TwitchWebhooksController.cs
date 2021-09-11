@@ -15,16 +15,24 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using OBSTwitch.Notifications;
+using OBSReactScenes.Notifications;
 
 using TwitchLib.Api;
+using TwitchLib.Api.Core.Enums;
 using TwitchLib.Api.Helix.Models.Clips.GetClips;
+using TwitchLib.Api.Helix.Models.Ads;
 
 using TwitchLib.PubSub;
 using TwitchLib.PubSub.Events;
 
-namespace OBSTwitch.Controllers
+using TwitchLib.Client;
+using TwitchLib.Client.Extensions;
+using TwitchLib.Api.Helix.Models.Schedule.GetChannelStreamSchedule;
+using TwitchLib.Api.Helix.Models.Schedule;
+using TwitchLib.Client.Models;
+using Microsoft.Extensions.Options;
+
+namespace OBSReactScenes.Controllers
 {
     /// <summary>
     /// <para>
@@ -40,12 +48,15 @@ namespace OBSTwitch.Controllers
     {
         private readonly IHubContext<NotificationHub> _hubContext;
         private readonly ILogger<TwitchWebhooksController> _logger;
+        private readonly EnvironmentConfig _configuration;
 
-        private static IConfiguration Settings;
-        private readonly TwitchAPI twitchAPI;
-        private readonly string ChannelId;
+        private readonly TwitchAPI _twitchAPI;
+        private TwitchClient _twitchClient;
+        private TwitchPubSub _twitchPubSub;
 
-        private TwitchPubSub pubSub;
+        // settings strings
+        // TODO: Look into making the config a class - is it reasonable?
+        private readonly string _channelId;
 
         // channels used for dev purposes due to large transaction rates
         private readonly Dictionary<string, string> _debugChannels = new Dictionary<string, string>()
@@ -58,25 +69,64 @@ namespace OBSTwitch.Controllers
             { "64342766" , "Trymacs" }
         };
 
-        public TwitchWebhooksController(IHubContext<NotificationHub> hubContext)
+        public TwitchWebhooksController(IHubContext<NotificationHub> hubContext, IOptions<EnvironmentConfig> configuration)
         {
             // _logger = logger;
             _hubContext = hubContext;
+            _configuration = configuration.Value;
 
-            Settings = new ConfigurationBuilder()
-                .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("./ClientApp/config.json", false, true)
-                .AddEnvironmentVariables()
-                .Build();
+            // since loading the file in the class itself doesn't work...
+            //using (StreamReader r = new StreamReader("./ClientApp/config.json"))
+            //{
+            //    string json = r.ReadToEnd();
+            //    JsonConvert.PopulateObject(json, SettingsInstance.Instance);
+            //}
 
-            // Channel Id
-            ChannelId = Settings.GetSection("twitch").GetValue<string>("channelId");
+            // channelId string
+            _channelId = _configuration.Twitch_ChannelId;
 
-            // set up TwitchLib API
-            twitchAPI = new TwitchAPI();
-            twitchAPI.Settings.ClientId = Settings.GetSection("twitch.api").GetValue<string>("client-id");
-            twitchAPI.Settings.Secret = Settings.GetSection("twitch.api").GetValue<string>("secret");
+            // TwitchLib API Settings
+            _twitchAPI = new TwitchAPI();
+            _twitchAPI.Settings.ClientId = _configuration.Twitch_Api_ClientId;
+            _twitchAPI.Settings.Secret = _configuration.Twitch_Api_Secret;
+            // _twitchAPI.Settings.AccessToken = Settings.Instance.Twitch.PubSub.OAuth;
+
+            ConnectionCredentials credentials = 
+                new ConnectionCredentials(
+                    _configuration.Twitch_ChannelName,
+                    _configuration.Twitch_PubSub_OAuth);
+
+            _twitchClient = new TwitchClient();
+            _twitchClient.Initialize(credentials, _channelId);
+            _twitchClient.Connect();
+            _twitchClient.OnRaidNotification += TwitchClient_OnRaidNotification;
+            // _twitchClient.OnRaidNotification()  // TODO: This might be what we need for grabbing the Raid notification
+
+            Authenticate();
         }
+
+        private void Authenticate()
+        {
+            string accessToken;
+
+            try
+            {
+                IEnumerable<AuthScopes> authScopes = new List<AuthScopes> {
+                    AuthScopes.Any
+                };
+
+                _twitchAPI.ThirdParty.AuthorizationFlow.CreateFlow("Wu Overlay Test", authScopes);
+
+                _twitchAPI.Settings.AccessToken = _twitchAPI.ThirdParty.AuthorizationFlow.GetAccessToken();
+                Console.WriteLine($"Access Token: {_twitchAPI.Settings.AccessToken}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+        }
+
+        #region Endpoints
 
         /// <summary>
         /// This sets up our event listeners that'll send notifications to our overlay UI
@@ -87,20 +137,28 @@ namespace OBSTwitch.Controllers
         {
             try
             {
+                // TODO: We should add a check that'll see if the channel being
+                // listened to is affiliated/partnered, and subscribe to events 
+                // based on their status. Else, we need a fallback if it errors
+                // to attempt again without Sub/Bit/ChannelPoints
+
                 // setup TwitchLib.PubSub
-                pubSub = new TwitchPubSub();
+                _twitchPubSub = new TwitchPubSub();
 
                 // PubSub Event Subscriptions
-                pubSub.OnListenResponse += OnListenResponse;
-                pubSub.OnPubSubServiceConnected += OnPubSubServiceConnected;
-                pubSub.OnPubSubServiceClosed += OnPubSubServiceClosed;
-                pubSub.OnPubSubServiceError += OnPubSubServiceError;
+                _twitchPubSub.OnListenResponse += OnListenResponse;
+                _twitchPubSub.OnPubSubServiceConnected += OnPubSubServiceConnected;
+                _twitchPubSub.OnPubSubServiceClosed += OnPubSubServiceClosed;
+                _twitchPubSub.OnPubSubServiceError += OnPubSubServiceError;
 
                 // Twitch Notifications that we want to handle
-                pubSub.OnBitsReceivedV2 += PubSub_OnBitsReceivedV2;
-                pubSub.OnFollow += PubSub_OnFollow;
-                pubSub.OnChannelSubscription += PubSub_OnChannelSubscription;
-                pubSub.OnChannelPointsRewardRedeemed += PubSub_OnChannelPointsRewardRedeemed;
+                _twitchPubSub.OnBitsReceivedV2 += PubSub_OnBitsReceivedV2;
+                _twitchPubSub.OnFollow += PubSub_OnFollow;
+                _twitchPubSub.OnChannelSubscription += PubSub_OnChannelSubscription;
+                _twitchPubSub.OnChannelPointsRewardRedeemed += PubSub_OnChannelPointsRewardRedeemed;
+
+                // TODO: Raid detection might be supported through TwitchLib.Client
+                
 
                 // Since Twitch doesn't handle donations themselves, donations are not part of
                 // the PubSub interface. If you wanted to get donation notifications, you'd
@@ -108,20 +166,18 @@ namespace OBSTwitch.Controllers
 #if DEBUG
                 foreach (var channel in _debugChannels)
                 {
-                //    pubSub.ListenToBitsEventsV2(channel.Key);
-                    pubSub.ListenToFollows(channel.Key);
-                //    pubSub.ListenToSubscriptions(channel.Key);
-                //    pubSub.ListenToChannelPoints(channel.Key);
+                    _twitchPubSub.ListenToFollows(channel.Key);
                 }
 #else
                 // release implementation -- get's ChannelId from config file
-                // pubSub.ListenToBitsEventsV2(ChannelId);
-                pubSub.ListenToFollows(ChannelId);
-                // pubSub.ListenToSubscriptions(ChannelId);
-                // pubSub.ListenToChannelPoints(ChannelId);
+                _twitchPubSub.ListenToFollows(_channelId);
+                _twitchPubSub.ListenToSubscriptions(_channelId);
+                _twitchPubSub.ListenToBitsEventsV2(_channelId);
+                _twitchPubSub.ListenToChannelPoints(_channelId);
 #endif
+                _twitchPubSub.ListenToRaid(_channelId);
 
-                pubSub.Connect();
+                _twitchPubSub.Connect();
 
                 return Ok();
             }
@@ -131,6 +187,86 @@ namespace OBSTwitch.Controllers
                 return NotFound();
             }
         }
+
+        [HttpGet]
+        public async Task<Clip[]> GetRecentClips()
+        {
+            try
+            {
+                var recentClips =
+                    await _twitchAPI.Helix.Clips.GetClipsAsync(broadcasterId: _channelId);
+
+                return recentClips.Clips;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            return new Clip[] { };
+        }
+
+        #region Commercials
+        // TODO: We need to test and make sure this appears to work 
+        [HttpGet]
+        public async Task<IActionResult> CommercialBreak(CommercialLength breakLength)
+        {
+            try
+            {
+                StartCommercialRequest startCommercialRequest = new StartCommercialRequest()
+                {
+                    BroadcasterId = _channelId,
+                    Length = (int)breakLength
+                };
+
+                StartCommercialResponse startCommercialResponse =
+                    await _twitchAPI.Helix.Ads.StartCommercial(startCommercialRequest);
+
+                // if our response message is empty, we succeeded
+                if (string.IsNullOrEmpty(startCommercialResponse.Message))
+                {
+                    // TODO: Log the successful commercial runs
+                    Console.WriteLine($"Commercials started and will play for {startCommercialResponse.Length} seconds");
+                    return Ok();
+                }
+                // otherwise, there might be an issue... 
+                else
+                {
+                    // TODO: Logging
+                    Console.WriteLine($"Commercial roll failed: {startCommercialResponse.Message}; Retry: {startCommercialResponse.RetryAfter}");
+                    return BadRequest();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return BadRequest(ex);
+            }
+        }
+        #endregion
+
+        /// <summary>
+        /// Gets the channels stream schedule. 
+        /// We can then display that schedule in our overlay
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<IActionResult> GetChannelSchedule()
+        {
+            try
+            {
+                GetChannelStreamScheduleResponse channelStreamScheduleResponse =
+                    await _twitchAPI.Helix.Schedule.GetChannelStreamScheduleAsync(_channelId);
+
+                ChannelStreamSchedule channelStreamSchedule = channelStreamScheduleResponse.Schedule;
+
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex);
+            }
+        }
+        #endregion
 
         #region Follow Events
         /// <summary>
@@ -201,7 +337,7 @@ namespace OBSTwitch.Controllers
             var reward = e.RewardRedeemed.Redemption.Reward;
             var redeemedUser = e.RewardRedeemed.Redemption.User;
 
-            // I believe in here is where we can set up our custom redemption handlers. 
+            // TODO: I believe in here is where we can set up our custom redemption handlers. 
             // so, if we had something like a color change, in here is where we'd handle that. 
             if (redemption.Status == "UNFULFILLED")
             {
@@ -249,8 +385,8 @@ namespace OBSTwitch.Controllers
             // TODO: We're probably going to want some sort of legit oauth here... 
             Console.WriteLine($"Connected to PubSub server");
             // so, we're actually going to need to set this up to get a legit OAuth token.. 
-            var oauth = ""; // Settings.GetSection("twitch.pubsub").GetValue<string>("oauth");
-            pubSub.SendTopics(oauth);
+            var oauth = _configuration.Twitch_PubSub_OAuth;
+            _twitchPubSub.SendTopics(oauth);
         }
 
         /// <summary>
@@ -279,14 +415,11 @@ namespace OBSTwitch.Controllers
         }
         #endregion
 
-        [HttpPost]
-        public async Task GetRecentClips()
+        #region Raid Events
+        private void TwitchClient_OnRaidNotification(object sender, TwitchLib.Client.Events.OnRaidNotificationArgs e)
         {
-            GetClipsResponse clipResponse =
-                await twitchAPI.Helix.Clips.GetClipsAsync(broadcasterId: "");
-
-
-            // clipResponse.Clips;
+            throw new NotImplementedException();
         }
+        #endregion
     }
 }

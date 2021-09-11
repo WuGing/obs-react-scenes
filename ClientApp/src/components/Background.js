@@ -17,19 +17,22 @@ var __extends = (this && this.__extends) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 var React = require("react");
 var react_tsparticles_1 = require("react-tsparticles");
-require("./FindingMatch.scss");
-var FindingMatch = /** @class */ (function (_super) {
-    __extends(FindingMatch, _super);
-    function FindingMatch() {
+// import someTheme from '../theme.modules.scss';
+require("./Background.scss");
+var Background = /** @class */ (function (_super) {
+    __extends(Background, _super);
+    function Background() {
         return _super !== null && _super.apply(this, arguments) || this;
     }
-    FindingMatch.prototype.render = function () {
+    Background.prototype.render = function () {
+        var backgroundColor = "#fff";
+        var particleColor = "#ff0000";
         return (React.createElement(React.Fragment, null,
             React.createElement(react_tsparticles_1.default, { id: "tsparticles", options: {
                     "autoPlay": true,
                     "background": {
                         "color": {
-                            "value": "#033777"
+                            "value": backgroundColor
                         },
                         "image": "",
                         "position": "",
@@ -195,30 +198,7 @@ var FindingMatch = /** @class */ (function (_super) {
                             }
                         },
                         "color": {
-                            "value": "#ffffff",
-                            "animation": {
-                                "h": {
-                                    "count": 0,
-                                    "enable": true,
-                                    "offset": 0,
-                                    "speed": 50,
-                                    "sync": false
-                                },
-                                "s": {
-                                    "count": 0,
-                                    "enable": false,
-                                    "offset": 0,
-                                    "speed": 1,
-                                    "sync": true
-                                },
-                                "l": {
-                                    "count": 0,
-                                    "enable": false,
-                                    "offset": 0,
-                                    "speed": 1,
-                                    "sync": true
-                                }
-                            }
+                            "value": particleColor
                         },
                         "destroy": {
                             "mode": react_tsparticles_1.DestroyMode.none,
@@ -498,7 +478,7 @@ var FindingMatch = /** @class */ (function (_super) {
                     "themes": []
                 } })));
     };
-    return FindingMatch;
+    return Background;
 }(React.PureComponent));
-exports.default = FindingMatch;
-//# sourceMappingURL=FindingMatch.js.map
+exports.default = Background;
+//# sourceMappingURL=Background.js.map

@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
-using OBSTwitch.Notifications;
+using OBSReactScenes.Notifications;
 
-namespace OBSTwitch.Controllers
+namespace OBSReactScenes.Controllers
 {
     [ApiController]
     [Route("[controller]/[action]")]
@@ -32,6 +32,10 @@ namespace OBSTwitch.Controllers
             return Ok();
         }
 
+        // TODO: This isn't going to work currently. However,
+        // if we want to get something like this set up and working again,
+        // we'll likely need to implement something along the lines of 
+        // https://stackoverflow.com/questions/52261260/react-dynamic-themes
         [HttpGet]
         public IActionResult Primary([FromQuery(Name = "color")] string color)
         {

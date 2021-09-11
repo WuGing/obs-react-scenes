@@ -1,0 +1,65 @@
+﻿$background-color: #9f0102;
+$window-height: 1080px;
+$window-width: 1920px;
+
+.background {
+    background: $background-color;
+    height: $window-height;
+    width: $window-width;
+    z-index: 0;
+}
+
+$infinity-bg-url: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAIAAACRXR/mAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAIGNIUk0AAHolAACAgwAA+f8AAIDpAAB1MAAA6mAAADqYAAAXb5JfxUYAAABnSURBVHja7M5RDYAwDEXRDgmvEocnlrQS2SwUFST9uEfBGWs9c97nbGtDcquqiKhOImLs/UpuzVzWEi1atGjRokWLFi1atGjRokWLFi1atGjRokWLFi1af7Ukz8xWp8z8AAAA//8DAJ4LoEAAlL1nAAAAAElFTkSuQmCC";
+$infinity-bg-height: 50px;
+$infinity-bg-width: 50px;
+
+/* Animations */
+@-webkit-keyframes  infinity-bg-scrolling-reverse {
+    100% { background-position: $infinity-bg-width $infinity-bg-height; }
+}
+
+@-moz-keyframes     infinity-bg-scrolling-reverse {
+    100% { background-position: $infinity-bg-width $infinity-bg-height; }
+}
+
+@-o-keyframes       infinity-bg-scrolling-reverse {
+    100% { background-position: $infinity-bg-width $infinity-bg-height; }
+}
+
+@keyframes          infinity-bg-scrolling-reverse {
+    100% { background-position: $infinity-bg-width $infinity-bg-height; }
+}
+
+@-webkit-keyframes  infinity-bg-scrolling {
+    0% { background-position: $infinity-bg-width $infinity-bg-height; }
+}
+
+@-moz-keyframes     infinity-bg-scrolling {
+    0% { background-position: $infinity-bg-width $infinity-bg-height; }
+}
+
+@-o-keyframes       infinity-bg-scrolling {
+    0% { background-position: $infinity-bg-width $infinity-bg-height; }
+}
+
+@keyframes          infinity-bg-scrolling {
+    0% { background-position: $infinity-bg-width $infinity-bg-height; }
+}
+
+.infinity {
+    background: url($infinity-bg-url) repeat 0 0;
+    
+    -webkit-animation:  infinity-bg-scrolling-reverse .92s infinite;
+    -moz-animation:     infinity-bg-scrolling-reverse .92s infinite;
+    -o-animation:       infinity-bg-scrolling-reverse .92s infinite;
+    animation:          infinity-bg-scrolling-reverse .92s infinite;
+
+    -webkit-animation-timing-function:  linear;
+    -moz-animation-timing-function:     linear;
+    -o-animation-timing-function:       linear;
+    animation-timing-function:          linear;
+}
+
+.bars {
+    
+}

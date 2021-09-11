@@ -1,0 +1,16 @@
+﻿$blue: #033777;
+
+$primary-color: #ff0000;
+$primary-color-transparent: rgba($primary-color, .65);
+
+$background-color: $primary-color;
+$particle-color: #fff;
+
+$notification-color: #fff;
+
+$font-family: 'Neue Haas Grotesk Display Pro', sans-serif;
+
+:export {
+    backgroundColor: $background-color;
+    particleColor: $particle-color;
+}

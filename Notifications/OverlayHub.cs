@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace OBSTwitch.Notifications
+namespace OBSReactScenes.Notifications
 {
     public class OverlayHub : Hub
     {

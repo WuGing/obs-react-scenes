@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 
-namespace OBSTwitch.Notifications
+namespace OBSReactScenes.Notifications
 {
     public class NotificationHub : Hub
     {

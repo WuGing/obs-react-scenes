@@ -16,23 +16,48 @@ var __extends = (this && this.__extends) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 var React = require("react");
+var ClipsStore = require("../store/Clips");
+var react_redux_1 = require("react-redux");
 var Clips = /** @class */ (function (_super) {
     __extends(Clips, _super);
-    function Clips() {
-        return _super !== null && _super.apply(this, arguments) || this;
+    function Clips(props) {
+        var _this = _super.call(this, props) || this;
+        _this.state = { activeClip: 0, clips: [], clipsLoaded: false };
+        return _this;
     }
     Clips.prototype.componentDidMount = function () {
-        // this will need to make a call to the API so we can get a list of our videos
-        // we will then... somehow... rotate through those videos, changing
-        // the video source to match the next one (or however that works)
-        // Probably need some classing to for the video.
-        // 1280x720 for now, since we shouldn't really be doing 1080p yet anyhow
+        this.ensureClipsFetched();
+    };
+    Clips.prototype.componentDidUpdate = function () {
+        this.ensureClipsFetched();
+    };
+    Clips.prototype.ensureClipsFetched = function () {
+        // anything that we might need for requesting clips (date range, etc)
+        this.props.requestClips(this.state.activeClip);
     };
     Clips.prototype.render = function () {
-        return (React.createElement(React.Fragment, null,
-            React.createElement("video", { src: "https://production.assets.clips.twitchcdn.net/AT-cm%7C1172792820.mp4?sig=ee192627523271a6ab3ab258fd90e2f1d86bf538&token=%7B%22authorization%22%3A%7B%22forbidden%22%3Afalse%2C%22reason%22%3A%22%22%7D%2C%22clip_uri%22%3A%22https%3A%2F%2Fproduction.assets.clips.twitchcdn.net%2FAT-cm%257C1172792820.mp4%22%2C%22device_id%22%3A%22hK4IpharVfHK6CPEu6JDhrwRMqFD0mwQ%22%2C%22expires%22%3A1623510534%2C%22user_id%22%3A%22141867254%22%2C%22version%22%3A2%7D" })));
+        return (React.createElement(React.Fragment, null, this.renderClipWindow()));
+    };
+    Clips.prototype.renderClipWindow = function () {
+        var clip = this.props.clips[this.props.activeClip];
+        var embededUrl = clip.embededUrl + "&autoplay=true";
+        return (React.createElement("iframe", { src: embededUrl, frameBorder: "0", scrolling: "no", height: "720", width: "1280", onLoad: this.loaded }));
+    };
+    // setup loading the next clip
+    Clips.prototype.loaded = function () {
+        var _this = this;
+        console.log(this.props.clips);
+        // start a timer
+        var newClipIndex = this.props.activeClip + 1 <= this.props.clips.length ? this.props.activeClip + 1 : 0;
+        // get the duration of the clip - probably need to convert this to milliseconds
+        var currentClipLength = this.props.clips[this.state.activeClip].duration * 100;
+        // just before the end of the clip, we want to change the state. This will hopefully result in the next video loading... 
+        setTimeout(function () { return _this.setState({ activeClip: newClipIndex }); }, currentClipLength - 500);
     };
     return Clips;
 }(React.PureComponent));
-exports.default = Clips;
+;
+exports.default = react_redux_1.connect(function (state) { return state.clip; }, // Selects which state properties are merged into the component's props
+ClipsStore.actionCreators // Selects which action creators are merged into the component's props
+)(Clips);
 //# sourceMappingURL=Clips.js.map

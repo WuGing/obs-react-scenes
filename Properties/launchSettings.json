@@ -15,7 +15,7 @@
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
     },
-    "OBS_Twitch": {
+    "OBS React Scenes": {
       "commandName": "Project",
       "launchBrowser": true,
       "environmentVariables": {

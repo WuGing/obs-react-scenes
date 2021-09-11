@@ -7,7 +7,7 @@
     <IsPackable>false</IsPackable>
     <SpaRoot>ClientApp\</SpaRoot>
     <DefaultItemExcludes>$(DefaultItemExcludes);$(SpaRoot)node_modules\**</DefaultItemExcludes>
-    <RootNamespace>OBSTwitch</RootNamespace>
+    <RootNamespace>OBSReactScenes</RootNamespace>
     <UserSecretsId>b2d4709b-385e-427c-b417-185cc56d1807</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <AssemblyName></AssemblyName>
@@ -16,17 +16,18 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNet.SignalR.Core" Version="2.4.2" />
     <PackageReference Include="Microsoft.AspNet.WebApi.Core" Version="5.2.7" />
-    <PackageReference Include="Microsoft.AspNetCore.SpaServices.Extensions" Version="3.1.12" />
-    <PackageReference Include="Microsoft.TypeScript.MSBuild" Version="4.3.2">
+    <PackageReference Include="Microsoft.AspNetCore.SpaServices.Extensions" Version="3.1.15" />
+    <PackageReference Include="Microsoft.TypeScript.MSBuild" Version="4.3.5">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.10.13" />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.11.1" />
     <PackageReference Include="System.Collections" Version="4.3.0" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="5.0.0" />
     <PackageReference Include="System.Net.Http.Json" Version="5.0.0" />
-    <PackageReference Include="TwitchLib.Api" Version="3.2.4-preview-fc7c5711a8dfc22ae7b2777b6dcabd03a5aac089" />
-    <PackageReference Include="TwitchLib.Client" Version="3.2.3-preview-94b33cd801bf51e1d81b179ce10c7d896072b4c3" />
-    <PackageReference Include="TwitchLib.PubSub" Version="3.2.3-preview-ffaccb5be075122332aeb3ca0358407df0276b25" />
+    <PackageReference Include="TwitchLib.Api" Version="3.2.4" />
+    <PackageReference Include="TwitchLib.Client" Version="3.2.3" />
+    <PackageReference Include="TwitchLib.PubSub" Version="3.2.3" />
   </ItemGroup>
 
   <ItemGroup>
@@ -46,12 +47,19 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="ClientApp\src\components\Background.tsx" />
     <None Remove="ClientApp\src\components\Clips.tsx" />
-    <None Remove="ClientApp\src\components\FindingMatch.tsx" />
     <None Remove="ClientApp\src\components\index.tsx" />
+    <None Remove="ClientApp\src\components\Overlay\Fader.tsx" />
     <None Remove="ClientApp\src\components\Overlay\Notification.tsx" />
+    <None Remove="ClientApp\src\components\StreamBRB.tsx" />
+    <None Remove="ClientApp\src\components\StreamEnding.tsx" />
+    <None Remove="ClientApp\src\components\StreamStarting.tsx" />
     <None Remove="ClientApp\src\components\WebCamOverlay.tsx" />
+    <None Remove="ClientApp\src\store\Clips.ts" />
     <None Remove="ClientApp\src\store\Notification.ts" />
+    <None Remove="ClientApp\src\store\Settings.ts" />
+    <None Remove="ClientApp\src\StreamStarting.tsx" />
   </ItemGroup>
 
   <ItemGroup>
@@ -59,12 +67,19 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="ClientApp\config.example.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <TypeScriptCompile Include="ClientApp\src\theme.module.scss" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="ClientApp\config.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <TypeScriptCompile Update="ClientApp\src\store\Clips.ts">
+      <SubType>Code</SubType>
+    </TypeScriptCompile>
   </ItemGroup>
 
   <Target Name="DebugEnsureNodeEnv" BeforeTargets="Build" Condition=" '$(Configuration)' == 'Debug' And !Exists('$(SpaRoot)node_modules') ">

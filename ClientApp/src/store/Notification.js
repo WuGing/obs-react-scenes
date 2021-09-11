@@ -15,7 +15,6 @@ var NotificationType;
 exports.actionCreators = {
     setupNotifications: function () { return function (dispatch, getState) {
         var appState = getState();
-        console.log("Starting Notifications");
         // we're able to get an app state (might want to actually set that up here?)
         if (appState) {
             fetch("twitchwebhooks/setuplisteners");
@@ -47,7 +46,6 @@ var reducer = function (state, incomingAction) {
                 notificationIcon: ""
             };
         case 'REQUEST_NEXT_NOTIFICATION':
-            console.log("REQUEST_NEXT_NOTIFICATION");
             return {
                 notification: "",
                 notificationIcon: ""

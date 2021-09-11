@@ -4,9 +4,9 @@ using Microsoft.AspNetCore.SpaServices.ReactDevelopmentServer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using OBSTwitch.Notifications;
+using OBSReactScenes.Notifications;
 
-namespace OBSTwitch
+namespace OBSReactScenes
 {
     public class Startup
     {
@@ -21,6 +21,8 @@ namespace OBSTwitch
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllersWithViews();
+
+            services.Configure<EnvironmentConfig>(Configuration);
 
             // In production, the React files will be served from this directory
             services.AddSpaStaticFiles(configuration =>

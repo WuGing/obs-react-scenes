@@ -1,4 +1,6 @@
-﻿.svg-color {
+﻿@import '../../theme.scss';
+
+.svg-color {
     height: 0px;
     width: 0px;
 }
@@ -6,21 +8,26 @@
 .overlay-4x5 {
     height: 1350px;
     width: 1080px;
-    border: 10px solid #033777;
+    border: 10px solid $primary-color;
     position: relative;
 }
 
 .overlay-3x2 {
     height: 1620px;
     width: 1080px;
-    border: 10px solid #033777;
+    border: 10px solid $primary-color;
     position: relative;
+}
+
+.animate-on-change {
+    height: 100%;
+    width: 100%;
 }
 
 .notification {
     height: 80px;
     width: 1040px;
-    background: #033777aa;
+    background: $primary-color-transparent;
     position: absolute;
     bottom: 10px;
     left: 10px;
@@ -34,7 +41,7 @@
     font-weight: 700;
     font-size: 48px;
     font-style: normal;
-    color: #fff;
+    color: $notification-color;
 
     i {
         margin: 0 10px;
@@ -47,6 +54,6 @@
 
 .notificationText {
     text-transform: uppercase;
-    font-family: 'Neue Haas Grotesk Display Pro', sans-serif;
+    font-family: $font-family;
     margin: 0;
 }

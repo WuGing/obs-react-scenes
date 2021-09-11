@@ -18,7 +18,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var React = require("react");
 var signalR = require("@microsoft/signalr");
 var NotificationStore = require("../../store/Notification");
-require("animate.css");
+var react_animation_1 = require("react-animation");
 var react_redux_1 = require("react-redux");
 require("bootstrap-icons/font/bootstrap-icons.css");
 var Notification = /** @class */ (function (_super) {
@@ -35,8 +35,8 @@ var Notification = /** @class */ (function (_super) {
         };
         // update notification every 5 seconds
         setInterval(function () {
-            _this.getNextNotificationGroup();
-            _this.getCurrentNotification();
+            _this.updateNotificationGroup();
+            _this.updateCurrentNotification();
         }, 5000);
         return _this;
     }
@@ -48,26 +48,38 @@ var Notification = /** @class */ (function (_super) {
         // here, we'll have to save out somehow our most recent notifications
         // that way we'll have them next time
     };
-    Notification.prototype.getCurrentNotification = function () {
-        var notificationGroup = this.notificationArray[this.currentGroup];
-        var currentNotification = notificationGroup.notifications.length > 1 ?
-            notificationGroup.notifications.shift() : notificationGroup.notifications[0];
-        if (currentNotification == undefined) {
-            currentNotification = { type: NotificationStore.NotificationType.none, username: "", info: "" };
+    Notification.prototype.updateNotificationGroup = function () {
+        // if we have more than 1 notification type
+        if (this.notificationArray.length >= 1) {
+            // check if incrementing will lead to an out of bounds
+            if (this.currentGroup + 1 > this.notificationArray.length) {
+                // reset index
+                this.currentGroup = 0;
+            }
+            // increment group
+            else {
+                // increment index
+                this.currentGroup++;
+            }
         }
-        this.setState({ notification: currentNotification === null || currentNotification === void 0 ? void 0 : currentNotification.username, notificationIcon: currentNotification === null || currentNotification === void 0 ? void 0 : currentNotification.type });
     };
-    Notification.prototype.getNextNotificationGroup = function () {
-        if (this.currentGroup + 1 == this.notificationArray.length) {
-            return this.notificationArray[this.currentGroup].notifications;
-        }
-        else if (this.currentGroup + 1 > this.notificationArray.length) {
-            this.currentGroup = 0;
-            return this.notificationArray[this.currentGroup].notifications;
-        }
-        else {
-            this.currentGroup++;
-            return this.notificationArray[this.currentGroup].notifications;
+    Notification.prototype.updateCurrentNotification = function () {
+        // attempt getting the current notification group
+        var notificationGroup = this.notificationArray[this.currentGroup];
+        // if we have a valid notification group (so, we've gotten notis)
+        if (notificationGroup !== undefined) {
+            // if we have more than one notification queued
+            if (notificationGroup.notifications.length > 1) {
+                // get the next notification
+                var currentNotification = notificationGroup.notifications.shift();
+                // technically, we shouldn't ever get here, but setState isn't happy that 'currentNotification' could be undefined
+                if (currentNotification == undefined) {
+                    console.log("Jim, something broke...");
+                    currentNotification = { username: "", type: NotificationStore.NotificationType.none, info: "" };
+                }
+                // this should only update if we're changing the notification
+                this.setState({ notification: currentNotification === null || currentNotification === void 0 ? void 0 : currentNotification.username, notificationIcon: currentNotification === null || currentNotification === void 0 ? void 0 : currentNotification.type });
+            }
         }
     };
     Notification.prototype.addNewNotification = function (notification) {
@@ -85,10 +97,12 @@ var Notification = /** @class */ (function (_super) {
     };
     // at some point, we're going to have to figure out how to animate all of this... 
     Notification.prototype.render = function () {
+        console.log(this.state.notification);
         return (React.createElement(React.Fragment, null,
-            React.createElement("div", { className: "notificationContainer" },
-                React.createElement("i", { className: this.state.notificationIcon }),
-                React.createElement("p", { className: "notificationText" }, this.state.notification))));
+            React.createElement(react_animation_1.AnimateOnChange, { animation: "fade" },
+                React.createElement("div", { className: "notificationContainer" },
+                    React.createElement("i", { className: this.state.notificationIcon }),
+                    React.createElement("p", { className: "notificationText" }, this.state.notification)))));
     };
     Notification.prototype.setupNotificationListener = function () {
         var _this = this;

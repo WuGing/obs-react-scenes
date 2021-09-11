@@ -1,14 +1,14 @@
 ﻿import * as React from 'react';
 import * as signalR from "@microsoft/signalr";
 import * as NotificationStore from '../../store/Notification';
-import 'animate.css';
+import { AnimateOnChange } from 'react-animation';
 import { ApplicationState } from '../../store';
 import { connect } from 'react-redux';
 
 import 'bootstrap-icons/font/bootstrap-icons.css';
 
 type TwitchNotificationProps =
-    & typeof NotificationStore.actionCreators;
+    typeof NotificationStore.actionCreators;
 
 class Notification extends React.PureComponent<TwitchNotificationProps, NotificationStore.TwitchNotificationState> {
 
@@ -27,8 +27,8 @@ class Notification extends React.PureComponent<TwitchNotificationProps, Notifica
 
         // update notification every 5 seconds
         setInterval(() => {
-            this.getNextNotificationGroup();
-            this.getCurrentNotification();
+            this.updateNotificationGroup();
+            this.updateCurrentNotification();
         }, 5000);
     }
 
@@ -42,30 +42,43 @@ class Notification extends React.PureComponent<TwitchNotificationProps, Notifica
         // that way we'll have them next time
     }
 
-    private getCurrentNotification() {
-        let notificationGroup = this.notificationArray[this.currentGroup];
-
-        let currentNotification = notificationGroup.notifications.length > 1 ?
-            notificationGroup.notifications.shift() : notificationGroup.notifications[0];
-
-        if (currentNotification == undefined) {
-            currentNotification = { type: NotificationStore.NotificationType.none, username: "", info: "" };
+    private updateNotificationGroup() {
+        // if we have more than 1 notification type
+        if (this.notificationArray.length >= 1) {
+            // check if incrementing will lead to an out of bounds
+            if (this.currentGroup + 1 > this.notificationArray.length) {
+                // reset index
+                this.currentGroup = 0;
+            }
+            // increment group
+            else {
+                // increment index
+                this.currentGroup++;
+            }
         }
-
-        this.setState({ notification: currentNotification?.username, notificationIcon: currentNotification?.type });
     }
 
-    private getNextNotificationGroup() {
-        if (this.currentGroup + 1 == this.notificationArray.length) {
-            return this.notificationArray[this.currentGroup].notifications;
-        }
-        else if (this.currentGroup + 1 > this.notificationArray.length) {
-            this.currentGroup = 0;
-            return this.notificationArray[this.currentGroup].notifications;
-        }
-        else {
-            this.currentGroup++;
-            return this.notificationArray[this.currentGroup].notifications;
+    private updateCurrentNotification() {
+        // attempt getting the current notification group
+        let notificationGroup = this.notificationArray[this.currentGroup];
+
+        // if we have a valid notification group (so, we've gotten notis)
+        if (notificationGroup !== undefined) {
+
+            // if we have more than one notification queued
+            if (notificationGroup.notifications.length > 1) {
+                // get the next notification
+                let currentNotification = notificationGroup.notifications.shift();
+
+                // technically, we shouldn't ever get here, but setState isn't happy that 'currentNotification' could be undefined
+                if (currentNotification == undefined) {
+                    console.log("Jim, something broke...");
+                    currentNotification = { username: "", type: NotificationStore.NotificationType.none, info: "" }
+                }
+
+                // this should only update if we're changing the notification
+                this.setState({ notification: currentNotification?.username, notificationIcon: currentNotification?.type });
+            }
         }
     }
 
@@ -87,13 +100,18 @@ class Notification extends React.PureComponent<TwitchNotificationProps, Notifica
 
     // at some point, we're going to have to figure out how to animate all of this... 
     public render() {
+        console.log(this.state.notification);
+
         return (
             <React.Fragment>
-                <div className="notificationContainer">
-                    <i className={this.state.notificationIcon} />
-                    <p className="notificationText">{this.state.notification}</p>
-                </div>
-            </React.Fragment>
+                <AnimateOnChange
+                    animation="fade">
+                    <div className="notificationContainer">
+                        <i className={this.state.notificationIcon} />
+                        <p className="notificationText">{this.state.notification}</p>
+                    </div>
+                </AnimateOnChange>
+            </React.Fragment >
         )
     }
 
