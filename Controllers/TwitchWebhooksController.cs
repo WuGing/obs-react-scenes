@@ -19,16 +19,17 @@ using OBSReactScenes.Notifications;
 
 using TwitchLib.Api;
 using TwitchLib.Api.Core.Enums;
-using TwitchLib.Api.Helix.Models.Clips.GetClips;
 using TwitchLib.Api.Helix.Models.Ads;
+using TwitchLib.Api.Helix.Models.Clips.GetClips;
+using TwitchLib.Api.Helix.Models.Schedule;
+using TwitchLib.Api.Helix.Models.Schedule.GetChannelStreamSchedule;
+using TwitchLib.Api.V5.Models.Channels;
 
 using TwitchLib.PubSub;
 using TwitchLib.PubSub.Events;
 
 using TwitchLib.Client;
 using TwitchLib.Client.Extensions;
-using TwitchLib.Api.Helix.Models.Schedule.GetChannelStreamSchedule;
-using TwitchLib.Api.Helix.Models.Schedule;
 using TwitchLib.Client.Models;
 using Microsoft.Extensions.Options;
 
@@ -55,7 +56,6 @@ namespace OBSReactScenes.Controllers
         private TwitchPubSub _twitchPubSub;
 
         // settings strings
-        // TODO: Look into making the config a class - is it reasonable?
         private readonly string _channelId;
 
         // channels used for dev purposes due to large transaction rates
@@ -95,6 +95,8 @@ namespace OBSReactScenes.Controllers
             _twitchClient.OnRaidNotification += TwitchClient_OnRaidNotification;
             // _twitchClient.OnRaidNotification()  // TODO: This might be what we need for grabbing the Raid notification
 
+            // TODO: Will need to add Goal support as that's built out. 
+
             Authenticate();
         }
 
@@ -130,11 +132,6 @@ namespace OBSReactScenes.Controllers
         {
             try
             {
-                // TODO: We should add a check that'll see if the channel being
-                // listened to is affiliated/partnered, and subscribe to events 
-                // based on their status. Else, we need a fallback if it errors
-                // to attempt again without Sub/Bit/ChannelPoints
-
                 // setup TwitchLib.PubSub
                 _twitchPubSub = new TwitchPubSub();
 
@@ -144,31 +141,43 @@ namespace OBSReactScenes.Controllers
                 _twitchPubSub.OnPubSubServiceClosed += OnPubSubServiceClosed;
                 _twitchPubSub.OnPubSubServiceError += OnPubSubServiceError;
 
-                // Twitch Notifications that we want to handle
-                _twitchPubSub.OnBitsReceivedV2 += PubSub_OnBitsReceivedV2;
+                // Twitch notification handler for follows
                 _twitchPubSub.OnFollow += PubSub_OnFollow;
-                _twitchPubSub.OnChannelSubscription += PubSub_OnChannelSubscription;
-                _twitchPubSub.OnChannelPointsRewardRedeemed += PubSub_OnChannelPointsRewardRedeemed;
 
                 // TODO: Raid detection might be supported through TwitchLib.Client
-                
 
                 // Since Twitch doesn't handle donations themselves, donations are not part of
                 // the PubSub interface. If you wanted to get donation notifications, you'd
                 // have to check with your donation provider for an API
+
 #if DEBUG
                 foreach (var channel in _debugChannels)
                 {
                     _twitchPubSub.ListenToFollows(channel.Key);
                 }
 #else
-                // release implementation -- get's ChannelId from config file
+                // We need to try and check if the broadcaster is a partner or affiliate
+                Channel broadcasterChannel = 
+                    await _twitchAPI.V5.Channels.GetChannelByIDAsync(_channelId);
+
+                // release implementation
                 _twitchPubSub.ListenToFollows(_channelId);
-                _twitchPubSub.ListenToSubscriptions(_channelId);
-                _twitchPubSub.ListenToBitsEventsV2(_channelId);
-                _twitchPubSub.ListenToChannelPoints(_channelId);
-#endif
                 _twitchPubSub.ListenToRaid(_channelId);
+
+                // the following only apply to affiliate and partnered channels
+                if (IsAffiliateOrPartnered(broadcasterChannel))
+                {
+                    // Twitch Affiliate/Partner notification handlers
+                    _twitchPubSub.OnBitsReceivedV2 += PubSub_OnBitsReceivedV2;
+                    _twitchPubSub.OnChannelSubscription += PubSub_OnChannelSubscription;
+                    _twitchPubSub.OnChannelPointsRewardRedeemed += PubSub_OnChannelPointsRewardRedeemed;
+
+                    // Twitch Affiliate/Partner listen requests
+                    _twitchPubSub.ListenToBitsEventsV2(_channelId);
+                    _twitchPubSub.ListenToChannelPoints(_channelId);
+                    _twitchPubSub.ListenToSubscriptions(_channelId);
+                }
+#endif
 
                 _twitchPubSub.Connect();
 
@@ -412,6 +421,18 @@ namespace OBSReactScenes.Controllers
         private void TwitchClient_OnRaidNotification(object sender, TwitchLib.Client.Events.OnRaidNotificationArgs e)
         {
             throw new NotImplementedException();
+        }
+        #endregion
+
+        #region Helper Functions
+        /// <summary>
+        /// Checks if a Twitch Broadcaster is Partnered or Affiliated
+        /// </summary>
+        /// <param name="broadcastChannel"></param>
+        /// <returns>bool indicating Partnered/Affiliate status</returns>
+        public bool IsAffiliateOrPartnered(Channel broadcastChannel)
+        {
+            return !string.IsNullOrEmpty(broadcastChannel.BroadcasterType);
         }
         #endregion
     }

@@ -58,7 +58,6 @@
     <None Remove="ClientApp\src\components\WebCamOverlay.tsx" />
     <None Remove="ClientApp\src\store\Clips.ts" />
     <None Remove="ClientApp\src\store\Notification.ts" />
-    <None Remove="ClientApp\src\store\Settings.ts" />
     <None Remove="ClientApp\src\StreamStarting.tsx" />
   </ItemGroup>
 
