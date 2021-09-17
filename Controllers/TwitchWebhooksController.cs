@@ -48,8 +48,8 @@ namespace OBSReactScenes.Controllers
     public class TwitchWebhooksController : ControllerBase
     {
         private readonly IHubContext<NotificationHub> _hubContext;
-        private readonly ILogger<TwitchWebhooksController> _logger;
         private readonly EnvironmentConfig _configuration;
+        private readonly ILogger<TwitchWebhooksController> _logger;
 
         private readonly TwitchAPI _twitchAPI;
         private TwitchClient _twitchClient;
@@ -69,11 +69,11 @@ namespace OBSReactScenes.Controllers
             { "64342766" , "Trymacs" }
         };
 
-        public TwitchWebhooksController(IHubContext<NotificationHub> hubContext, IOptions<EnvironmentConfig> configuration)
+        public TwitchWebhooksController(IHubContext<NotificationHub> hubContext, IOptions<EnvironmentConfig> configuration, ILogger<TwitchWebhooksController> logger)
         {
-            // _logger = logger;
             _hubContext = hubContext;
             _configuration = configuration.Value;
+            _logger = logger;
 
             // channelId string
             _channelId = _configuration.Twitch_ChannelId;
@@ -113,11 +113,10 @@ namespace OBSReactScenes.Controllers
                 _twitchAPI.ThirdParty.AuthorizationFlow.CreateFlow("Wu Overlay Test", authScopes);
 
                 _twitchAPI.Settings.AccessToken = _twitchAPI.ThirdParty.AuthorizationFlow.GetAccessToken();
-                Console.WriteLine($"Access Token: {_twitchAPI.Settings.AccessToken}");
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                _logger.LogError(ex.Message);
             }
         }
 
@@ -185,7 +184,7 @@ namespace OBSReactScenes.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error: {ex.Message}");
+                _logger.LogError(ex.Message);
                 return NotFound();
             }
         }
@@ -202,7 +201,7 @@ namespace OBSReactScenes.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                _logger.LogError(ex.Message);
             }
             return new Clip[] { };
         }
@@ -226,21 +225,19 @@ namespace OBSReactScenes.Controllers
                 // if our response message is empty, we succeeded
                 if (string.IsNullOrEmpty(startCommercialResponse.Message))
                 {
-                    // TODO: Log the successful commercial runs
-                    Console.WriteLine($"Commercials started and will play for {startCommercialResponse.Length} seconds");
+                    _logger.LogInformation($"Commercials started and will play for {startCommercialResponse.Length} seconds");
                     return Ok();
                 }
                 // otherwise, there might be an issue... 
                 else
                 {
-                    // TODO: Logging
-                    Console.WriteLine($"Commercial roll failed: {startCommercialResponse.Message}; Retry: {startCommercialResponse.RetryAfter}");
+                    _logger.LogInformation($"Commercial roll failed: {startCommercialResponse.Message}; Retry: {startCommercialResponse.RetryAfter}");
                     return BadRequest();
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                _logger.LogError(ex.Message);
                 return BadRequest(ex);
             }
         }
@@ -265,6 +262,7 @@ namespace OBSReactScenes.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex.Message);
                 return BadRequest(ex);
             }
         }
@@ -297,11 +295,9 @@ namespace OBSReactScenes.Controllers
             // if it's a gifted sub, we want to recognize the gifter
             if (gifted)
             {
-                // _logger.LogInformation();
-
                 // if someone gifted, we want to acknowledge the gifter in our UI
                 _hubContext.Clients.All.SendAsync("OnChannelSubscriptionGifted", e.Subscription.DisplayName);
-
+                _logger.LogInformation($"{e.Subscription.DisplayName} has gifted a sub");
             }
             // after checking for gifted status, continue with checking their sub history
             else
@@ -351,7 +347,7 @@ namespace OBSReactScenes.Controllers
 
             }
 
-            Console.WriteLine($"Got Some Points Redeemed: {e.RewardRedeemed}");
+            _logger.LogInformation($"Got Some Points Redeemed: {e.RewardRedeemed}");
         }
 
         #endregion
@@ -364,7 +360,7 @@ namespace OBSReactScenes.Controllers
         /// <param name="e"></param>
         private void OnPubSubServiceError(object sender, OnPubSubServiceErrorArgs e)
         {
-            Console.WriteLine($"Error: {e.Exception.Message}");
+            _logger.LogError($"Error: {e.Exception.Message}");
         }
 
         /// <summary>
@@ -374,7 +370,7 @@ namespace OBSReactScenes.Controllers
         /// <param name="e"></param>
         private void OnPubSubServiceClosed(object sender, EventArgs e)
         {
-            Console.WriteLine($"Connection closed to PubSub server");
+            _logger.LogError($"Connection closed to PubSub server");
         }
 
         /// <summary>
@@ -385,7 +381,7 @@ namespace OBSReactScenes.Controllers
         private void OnPubSubServiceConnected(object sender, EventArgs e)
         {
             // TODO: We're probably going to want some sort of legit oauth here... 
-            Console.WriteLine($"Connected to PubSub server");
+            _logger.LogInformation($"Connected to PubSub server");
             // so, we're actually going to need to set this up to get a legit OAuth token.. 
             var oauth = _configuration.Twitch_PubSub_OAuth;
             _twitchPubSub.SendTopics(oauth);
@@ -400,31 +396,28 @@ namespace OBSReactScenes.Controllers
         {
             if (e.Successful)
             {
-                Console.WriteLine($"Successfully verified listening to topic: {e.Topic}");
+                _logger.LogInformation($"Successfully verified listening to topic: {e.Topic}");
             }
             else
             {
                 // Console.WriteLine($"Failed to listen! Response {e.Response.Error}");
-                try
-                {
-                    Console.WriteLine($"Failed to listen! Channel: {_debugChannels[e.ChannelId]}, Topic: {e.Topic}, Response: {e.Response.Error}");
-                }
-                catch
-                {
-                    Console.WriteLine($"Failed to listen! Channel: {e.ChannelId}, Topic: {e.Topic}, Response: {e.Response.Error}");
-                }
+#if DEBUG
+                _logger.LogError($"Failed to listen! Channel: {_debugChannels[e.ChannelId]}, Topic: {e.Topic}, Response: {e.Response.Error}");
+#else
+                _logger.LogError($"Failed to listen! Channel: {e.ChannelId}, Topic: {e.Topic}, Response: {e.Response.Error}");
+#endif
             }
         }
-        #endregion
+#endregion
 
-        #region Raid Events
+#region Raid Events
         private void TwitchClient_OnRaidNotification(object sender, TwitchLib.Client.Events.OnRaidNotificationArgs e)
         {
             throw new NotImplementedException();
         }
-        #endregion
+#endregion
 
-        #region Helper Functions
+#region Helper Functions
         /// <summary>
         /// Checks if a Twitch Broadcaster is Partnered or Affiliated
         /// </summary>
@@ -434,6 +427,6 @@ namespace OBSReactScenes.Controllers
         {
             return !string.IsNullOrEmpty(broadcastChannel.BroadcasterType);
         }
-        #endregion
+#endregion
     }
 }

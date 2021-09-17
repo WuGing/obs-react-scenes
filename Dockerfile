@@ -5,12 +5,12 @@ WORKDIR /app
 EXPOSE 80
 EXPOSE 443
 # Twitch Environment Settings 
-ENV Twitch_ChannelName=""
-ENV Twitch_ChannelId=""
-ENV Twitch_Api_ClientId=""
-ENV Twitch_Api_Secret=""
+ENV Twitch_ChannelName="wu_ging"
+ENV Twitch_ChannelId="141867254"
+ENV Twitch_Api_ClientId="srrlphfjv53q5lcwssatnjd0bd919e"
+ENV Twitch_Api_Secret="r1ake8kzfbau0n6iytggo43e5oezrq"
 ENV Twitch_Api_CallbackUrl=""
-ENV Twitch_PubSub_OAuth=""
+ENV Twitch_PubSub_OAuth="9yab0s8nh1uj6kd7lyytazkl6aooe9"
 #
 RUN curl -sL https://deb.nodesource.com/setup_14.x | bash -
 RUN apt-get install -y nodejs
